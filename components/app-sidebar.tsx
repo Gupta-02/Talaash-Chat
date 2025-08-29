@@ -21,6 +21,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     deleteSession,
   } = useChatStore();
 
+  // Defensive: find active session, fallback to first, fallback to undefined
+  const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
+  const messages = activeSession?.messages ?? [];
+
   return (
     <Sidebar {...props} variant="floating" className="!p-1.5">
       <SidebarHeader>
@@ -34,7 +38,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {sessions.map((session, idx) => (
             <div key={session.id} className={`flex items-center gap-2 transition-all duration-150 shadow-sm border ${activeSessionId === session.id ? 'bg-gradient-to-r from-green-200 via-emerald-100 to-green-100 dark:from-emerald-900/40 dark:to-green-900/30 border-emerald-400' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'} p-2 rounded-lg hover:scale-[1.03]`}>
               <span className="mr-2 text-lg">
-                {idx === 0 ? '💡' : idx === 1 ? '📚' : idx === 2 ? '🧪' : '💬'}
+                {session.icon || '💬'}
               </span>
               <Button
                 variant={activeSessionId === session.id ? "default" : "ghost"}
@@ -44,10 +48,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               >
                 {session.name}
               </Button>
-              <Button variant="ghost" size="sm" className="hover:bg-yellow-100 dark:hover:bg-yellow-900/30" onClick={() => renameSession(session.id, prompt('Rename session:', session.name) || session.name)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+                onClick={() => renameSession(session.id, prompt('Rename session:', session.name) || session.name)}
+                aria-label="Rename session"
+              >
                 📝
               </Button>
-              <Button variant="ghost" size="sm" className="hover:bg-red-100 dark:hover:bg-red-900/30" onClick={() => deleteSession(session.id)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hover:bg-red-100 dark:hover:bg-red-900/30"
+                onClick={() => deleteSession(session.id)}
+                aria-label="Delete session"
+              >
                 🗑️
               </Button>
             </div>

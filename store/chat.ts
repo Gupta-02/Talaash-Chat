@@ -10,6 +10,7 @@ type ChatSession = {
   name: string;
   messages: ChatMessage[];
   createdAt: number;
+  icon: string;
 };
 
 type ChatStore = {
@@ -39,22 +40,29 @@ type ChatStore = {
   setVoicePitch: (pitch: number) => void;
 };
 
+const SESSION_ICONS = ['💡', '📚', '🧪', '💬', '🤖', '📝', '🌟', '🔬', '🧠', '📖'];
+function getRandomIcon() {
+  return SESSION_ICONS[Math.floor(Math.random() * SESSION_ICONS.length)];
+}
+
+const initialSession = {
+  id: nanoid(),
+  name: "Default Session",
+  messages: [],
+  createdAt: Date.now(),
+  icon: getRandomIcon(),
+};
+
 export const useChatStore = create<ChatStore>((set, get) => ({
-  sessions: [
-    {
-      id: nanoid(),
-      name: "Default Session",
-      messages: [],
-      createdAt: Date.now(),
-    },
-  ],
-  activeSessionId: "",
+  sessions: [initialSession],
+  activeSessionId: initialSession.id,
   createSession: (name) => {
     const newSession = {
       id: nanoid(),
       name,
       messages: [],
       createdAt: Date.now(),
+      icon: getRandomIcon(),
     };
     set((state) => ({
       sessions: [...state.sessions, newSession],
@@ -69,13 +77,25 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       ),
     })),
   deleteSession: (id) =>
-    set((state) => ({
-      sessions: state.sessions.filter((s) => s.id !== id),
-      activeSessionId:
-        state.activeSessionId === id && state.sessions.length > 1
-          ? state.sessions[0].id
-          : state.activeSessionId,
-    })),
+    set((state) => {
+      // Prevent deleting the last session to avoid an empty state.
+      if (state.sessions.length <= 1) {
+        return state;
+      }
+
+      const newSessions = state.sessions.filter((s) => s.id !== id);
+      let newActiveId = state.activeSessionId;
+
+      // If the active session was deleted, fall back to the first session in the new list.
+      if (state.activeSessionId === id) {
+        newActiveId = newSessions[0].id;
+      }
+
+      return {
+        sessions: newSessions,
+        activeSessionId: newActiveId,
+      };
+    }),
   addMessage: (content, role, model) =>
     set((state) => ({
       sessions: state.sessions.map((s) =>
