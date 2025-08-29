@@ -23,7 +23,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   // Defensive: find active session, fallback to first, fallback to undefined
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
-  const messages = activeSession?.messages ?? [];
 
   return (
     <Sidebar {...props} variant="floating" className="!p-1.5">
