@@ -5,76 +5,120 @@ import { nanoid } from "nanoid";
 type ChatMode = "chat";
 type ModelType = string;
 
-type ChatStore = {
-	messages: ChatMessage[];
-	input: string;
-	setInput: (input: string) => void;
-	addMessage: (
-		content: string,
-		role: ChatMessage["role"],
-		model: string,
-	) => void;
-	updateLastMessage: (content: string) => void;
-	isStreaming: boolean;
-	setIsStreaming: (streaming: boolean) => void;
-	mode: ChatMode;
-	setMode: (mode: ChatMode) => void;
-	model: ModelType;
-	setModel: (model: ModelType) => void;
-	isReading: boolean;
-	stopReading: () => void;
-	voice: SpeechSynthesisVoice | null;
-	setVoice: (voice: SpeechSynthesisVoice) => void;
-	voiceRate: number;
-	setVoiceRate: (rate: number) => void;
-	voicePitch: number;
-	setVoicePitch: (pitch: number) => void;
+type ChatSession = {
+  id: string;
+  name: string;
+  messages: ChatMessage[];
+  createdAt: number;
 };
 
-export const useChatStore = create<ChatStore>((set) => ({
-	messages: [],
-	input: "",
-	setInput: (input) => set({ input }),
-	addMessage: (content, role, model) =>
-		set((state) => ({
-			messages: [
-				...state.messages,
-				{
-					id: nanoid(),
-					content,
-					role,
-					model,
-				},
-			],
-		})),
-	updateLastMessage: (content) =>
-		set((state) => {
-			const lastMessageIndex = state.messages.length - 1;
-			if (lastMessageIndex < 0) return state; // No messages yet
+type ChatStore = {
+  sessions: ChatSession[];
+  activeSessionId: string;
+  createSession: (name: string) => void;
+  switchSession: (id: string) => void;
+  renameSession: (id: string, name: string) => void;
+  deleteSession: (id: string) => void;
+  addMessage: (content: string, role: ChatMessage["role"], model: string) => void;
+  updateLastMessage: (content: string) => void;
+  input: string;
+  setInput: (input: string) => void;
+  isStreaming: boolean;
+  setIsStreaming: (streaming: boolean) => void;
+  mode: ChatMode;
+  setMode: (mode: ChatMode) => void;
+  model: ModelType;
+  setModel: (model: ModelType) => void;
+  isReading: boolean;
+  stopReading: () => void;
+  voice: SpeechSynthesisVoice | null;
+  setVoice: (voice: SpeechSynthesisVoice) => void;
+  voiceRate: number;
+  setVoiceRate: (rate: number) => void;
+  voicePitch: number;
+  setVoicePitch: (pitch: number) => void;
+};
 
-			const updatedMessages = [...state.messages];
-			updatedMessages[lastMessageIndex] = {
-				...updatedMessages[lastMessageIndex],
-				content: content,
-			};
-
-			return { ...state, messages: updatedMessages };
-		}),
-	isStreaming: false,
-	setIsStreaming: (streaming) => set({ isStreaming: streaming }),
-	mode: "chat", // Default mode is chat
-	setMode: (mode) => set({ mode: mode }),
-	model: "mistralai/mistral-7b-instruct:free", // Default model
-	setModel: (model) => set({ model: model }),
-	isReading: false,
-	stopReading: () => {
-		window.speechSynthesis.cancel();
-		set({ isReading: false });
-	},
-	voice: null,
-	setVoice: (voice) => set({ voice }),
-	voiceRate: 1,
-	setVoiceRate: (rate) => set({ voiceRate: rate }),
-	voicePitch: 1,
-	setVoicePitch: (pitch) => set({ voicePitch: pitch }),
+export const useChatStore = create<ChatStore>((set, get) => ({
+  sessions: [
+    {
+      id: nanoid(),
+      name: "Default Session",
+      messages: [],
+      createdAt: Date.now(),
+    },
+  ],
+  activeSessionId: "",
+  createSession: (name) => {
+    const newSession = {
+      id: nanoid(),
+      name,
+      messages: [],
+      createdAt: Date.now(),
+    };
+    set((state) => ({
+      sessions: [...state.sessions, newSession],
+      activeSessionId: newSession.id,
+    }));
+  },
+  switchSession: (id) => set({ activeSessionId: id }),
+  renameSession: (id, name) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === id ? { ...s, name } : s
+      ),
+    })),
+  deleteSession: (id) =>
+    set((state) => ({
+      sessions: state.sessions.filter((s) => s.id !== id),
+      activeSessionId:
+        state.activeSessionId === id && state.sessions.length > 1
+          ? state.sessions[0].id
+          : state.activeSessionId,
+    })),
+  addMessage: (content, role, model) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === state.activeSessionId
+          ? {
+              ...s,
+              messages: [
+                ...s.messages,
+                { id: nanoid(), content, role, model },
+              ],
+            }
+          : s
+      ),
+    })),
+  updateLastMessage: (content) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) => {
+        if (s.id !== state.activeSessionId || s.messages.length === 0) return s;
+        const updatedMessages = [...s.messages];
+        updatedMessages[updatedMessages.length - 1] = {
+          ...updatedMessages[updatedMessages.length - 1],
+          content,
+        };
+        return { ...s, messages: updatedMessages };
+      }),
+    })),
+  input: "",
+  setInput: (input) => set({ input }),
+  isStreaming: false,
+  setIsStreaming: (streaming) => set({ isStreaming: streaming }),
+  mode: "chat",
+  setMode: (mode) => set({ mode: mode }),
+  model: "mistralai/mistral-7b-instruct:free",
+  setModel: (model) => set({ model: model }),
+  isReading: false,
+  stopReading: () => {
+    window.speechSynthesis.cancel();
+    set({ isReading: false });
+  },
+  voice: null,
+  setVoice: (voice) => set({ voice }),
+  voiceRate: 1,
+  setVoiceRate: (rate) => set({ voiceRate: rate }),
+  voicePitch: 1,
+  setVoicePitch: (pitch) => set({ voicePitch: pitch }),
 }));

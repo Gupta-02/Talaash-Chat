@@ -8,7 +8,9 @@ export default function Home() {
 	return (
 		<div className="h-screen w-[97%] md:w-[60%] relative mx-auto items-center !pb-4 flex flex-col">
 			<h1 className="italic text-3xl fraunces w-full flex justify-between pt-4 sm:fixed left-6 items-center select-none sm:px-0 px-4 pb-3">
-				<span className="!text-[#5e7e5f] dark:!text-white/85">Talaash</span>
+				<Link href="/" prefetch className="!text-[#5e7e5f] dark:!text-white/85 focus:outline-none" aria-label="Go to Home">
+					Talaash
+				</Link>
 
 				<div className="sm:fixed right-6 flex gap-3">
 					<ExportMenu />

@@ -25,10 +25,10 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export function Chat() {
-	const { messages, isReading, stopReading, voice, voiceRate, voicePitch } =
-		useChatStore();
-	const speakingRef = useRef<SpeechSynthesisUtterance | null>(null);
-
+  const { sessions, activeSessionId, isReading, stopReading, voice, voiceRate, voicePitch } = useChatStore();
+  const speakingRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
+  const messages = activeSession.messages;
 	const handleCopy = (content: string) => {
 		navigator.clipboard.writeText(content);
 	};
